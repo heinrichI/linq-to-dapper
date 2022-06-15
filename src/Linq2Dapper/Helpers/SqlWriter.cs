@@ -14,7 +14,7 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
         private readonly StringBuilder _joinTable;
         private readonly StringBuilder _whereClause;
         private readonly StringBuilder _orderBy;
-
+        private readonly ExpressionManager _expressionManager;
         private int _nextParameter;
 
         private string _parameter
@@ -38,25 +38,22 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
             }
         }
 
-        internal SqlWriter()
+        internal SqlWriter(ExpressionManager expressionManager)
         {
             Parameters = new DynamicParameters();
             _joinTable = new StringBuilder();
             _whereClause = new StringBuilder();
             _orderBy = new StringBuilder();
             SelectType = typeof(TData);
-            GetTypeProperties();
-        }
 
-        private void GetTypeProperties()
-        {
-            QueryHelper.GetTypeProperties(typeof (TData));
+            _expressionManager = expressionManager;
+            _expressionManager.GetTypeProperties(typeof(TData));
         }
 
         private void SelectStatement()
         {
-            var primaryTable = CacheHelper.TryGetTable<TData>();
-            var selectTable = (SelectType != typeof(TData)) ? CacheHelper.TryGetTable(SelectType) : primaryTable;
+            var primaryTable = _expressionManager.TryGetTable<TData>();
+            var selectTable = (SelectType != typeof(TData)) ? _expressionManager.TryGetTable(SelectType) : primaryTable;
 
             _selectStatement = new StringBuilder();
 
@@ -177,7 +174,7 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
 
         internal void Operator()
         {
-            Write(QueryHelper.GetOperator((NotOperater) ? ExpressionType.NotEqual : ExpressionType.Equal));
+            Write(ExpressionHelper.GetOperator((NotOperater) ? ExpressionType.NotEqual : ExpressionType.Equal));
             NotOperater = false;
         }
 

@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Dapper.Contrib.Linq2Dapper.Helpers
 {
-    internal class QueryHelper
+    internal class ExpressionHelper
     {
         internal static bool IsEqualsExpression(Expression exp)
         {
@@ -55,58 +55,6 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
 
             // We should have returned by now. 
             throw new Exception("There is a bug in this program.");
-        }
-
-        internal static string GetPropertyNameFromEqualsExpression(BinaryExpression be, Type memberDeclaringType)
-        {
-            if (!IsEqualsExpression(be))
-                throw new Exception("There is a bug in this program.");
-
-            if (be.Left.NodeType == ExpressionType.MemberAccess)
-            {
-                return GetPropertyNameFromExpression(be.Left);
-            }
-            if (be.Right.NodeType == ExpressionType.MemberAccess)
-            {
-                return GetPropertyNameFromExpression(be.Right);
-            }
-
-            // We should have returned by now. 
-            throw new Exception("There is a bug in this program.");
-        }
-
-        internal static string GetIndentifierFromExpression(Expression expression)
-        {
-            return GetTableFromExpression(expression).Identifier;
-        }
-
-        internal static TableHelper GetTableFromExpression(Expression expression)
-        {
-            var exp = GetMemberExpression(expression);
-            if (!(exp is MemberExpression)) return null;
-
-            return CacheHelper.TryGetTable(((MemberExpression)exp).Expression.Type);
-        }
-
-        internal static string GetPropertyNameWithIdentifierFromExpression(Expression expression)
-        {
-            var exp = GetMemberExpression(expression);
-            if (!(exp is MemberExpression)) return string.Empty;
-
-            var table = CacheHelper.TryGetTable(((MemberExpression)exp).Expression.Type);
-            var member = ((MemberExpression)exp).Member;
-
-            return string.Format("{0}.[{1}]", table.Identifier, table.Columns[member.Name]);
-        }
-
-        internal static string GetPropertyNameFromExpression(Expression expression)
-        {
-            var exp = GetMemberExpression(expression);
-            if (!(exp is MemberExpression)) return string.Empty;
-
-            var member = ((MemberExpression)exp).Member;
-            var columns = CacheHelper.TryGetPropertyList(((MemberExpression)exp).Expression.Type);
-            return columns[member.Name];
         }
 
         internal static Expression GetMemberExpression(Expression expression)
@@ -248,35 +196,6 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
         internal static bool IsVariable(Expression expr)
         {
             return (expr is MemberExpression) && (((MemberExpression)expr).Expression is ConstantExpression);
-        }
-
-        internal static TableHelper GetTypeProperties(Type type)
-        {
-            var table = CacheHelper.TryGetTable(type);
-            if (table.Name != null) return table; // have table in cache
-
-            // get properties add to cache
-            var properties = new Dictionary<string, string>();
-            type.GetProperties().ToList().ForEach(
-                    x =>
-                    {
-                        var col = (ColumnAttribute)x.GetCustomAttribute(typeof(ColumnAttribute));
-                        properties.Add(x.Name, (col != null) ? col.Name : x.Name);
-                    }
-                );
-
-
-            var attrib = (TableAttribute)type.GetCustomAttribute(typeof(TableAttribute));
-
-            table = new TableHelper
-            {
-                Name = (attrib != null ? attrib.Name : type.Name),
-                Columns = properties,
-                Identifier = string.Format("t{0}", CacheHelper.Size + 1)
-            };
-            CacheHelper.TryAddTable(type, table);
-
-            return table;
-        }
+        }  
     }
 }

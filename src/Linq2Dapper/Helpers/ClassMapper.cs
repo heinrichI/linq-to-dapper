@@ -5,81 +5,80 @@ using Dapper.Contrib.Linq2Dapper.Exceptions;
 
 namespace Dapper.Contrib.Linq2Dapper.Helpers
 {
-    internal static class CacheHelper
+    internal class ClassMapper
     {
-        internal static int Size {
+        internal int Size {
             get { return _typeList.Count; }
         }
 
-        private static readonly ConcurrentDictionary<Type, TableHelper> _typeList;
+        private readonly ConcurrentDictionary<Type, TableHelper> _typeList;
 
-        static CacheHelper()
+        internal ClassMapper()
         {
             if (_typeList == null)
                 _typeList = new ConcurrentDictionary<Type, TableHelper>();
         }
 
-        internal static bool HasCache<T>()
+        internal bool HasCache<T>()
         {
             return HasCache(typeof (T));
         }
 
-        internal static bool HasCache(Type type)
+        internal bool HasCache(Type type)
         {
             TableHelper table;
             return _typeList.TryGetValue(type, out table);
         }
 
-        internal static bool TryAddTable<T>(TableHelper table)
+        internal bool TryAddTable<T>(TableHelper table)
         {
             return TryAddTable(typeof(T), table);
         }
 
-        internal static bool TryAddTable(Type type, TableHelper table)
+        internal bool TryAddTable(Type type, TableHelper table)
         {
             return _typeList.TryAdd(type, table);
         }
 
-        internal static TableHelper TryGetTable<T>()
+        internal TableHelper TryGetTable<T>()
         {
             return TryGetTable(typeof(T));
         }
 
-        internal static TableHelper TryGetTable(Type type)
+        internal TableHelper TryGetTable(Type type)
         {
             TableHelper table;
             return !_typeList.TryGetValue(type, out table) ? new TableHelper() : table;
         }
 
-        internal static string TryGetIdentifier<T>()
+        internal string TryGetIdentifier<T>()
         {
             return TryGetIdentifier(typeof(T));
         }
 
-        internal static string TryGetIdentifier(Type type)
+        internal string TryGetIdentifier(Type type)
         {
             return TryGetTable(type).Identifier;
         }
 
-        internal static Dictionary<string, string> TryGetPropertyList<T>()
+        internal Dictionary<string, string> TryGetPropertyList<T>()
         {
             return TryGetPropertyList(typeof(T));
         }
 
-        internal static Dictionary<string, string> TryGetPropertyList(Type type)
+        internal Dictionary<string, string> TryGetPropertyList(Type type)
         {
             return TryGetTable(type).Columns;
         }
 
-        internal static string TryGetTableName<T>()
+        internal string TryGetTableName<T>()
         {
             return TryGetTableName(typeof(T));
         }
 
-        internal static string TryGetTableName(Type type)
+        internal string TryGetTableName(Type type)
         {
             return TryGetTable(type).Name;
         }
-
     }
 }

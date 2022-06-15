@@ -17,8 +17,11 @@ namespace Dapper.Contrib.Linq2Dapper
 
         public QueryProvider(IDbConnection connection)
         {
+            ClassMapper _classMapper = new ClassMapper();
+            ExpressionManager expressionManager = new ExpressionManager(_classMapper);
+
             _connection = connection;
-            _qb = new QueryBuilder<TData>();
+            _qb = new QueryBuilder<TData>(_classMapper, expressionManager);
         }
 
         public IQueryable CreateQuery(Expression expression)

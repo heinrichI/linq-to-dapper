@@ -10,7 +10,7 @@ namespace Dapper.Contrib.Linq2Dapper.Test.UnitTest
     [TestClass]
     public class Linq2DapperShould
     {
-        private static string ConnectionString { get { return "Data Source=.;Database=Test;Trusted_Connection=True;"; } }
+        private static string ConnectionString { get { return "Data Source=.\\SQLEXPRESS;Database=TestDapper;Trusted_Connection=True;"; } }
 
         [TestMethod]
         public void SelectAllRecords()

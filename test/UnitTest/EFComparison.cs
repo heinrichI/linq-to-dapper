@@ -10,7 +10,7 @@ namespace UnitTest
     [TestClass]
     public class EFComparison
     {
-        private static string ConnectionString { get { return "Data Source=.;Database=Test;Trusted_Connection=True;"; } }
+        private static string ConnectionString { get { return "Data Source=.\\SQLEXPRESS;Database=TestDapper;Trusted_Connection=True;"; } }
         private readonly DbContext _context;
 
         public EFComparison()

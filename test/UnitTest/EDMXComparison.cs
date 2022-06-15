@@ -9,7 +9,7 @@ namespace UnitTest
     [TestClass]
     public class EDMXComparison
     {
-        private static string ConnectionString { get { return "Data Source=.;Database=Test;Trusted_Connection=True;"; } }
+        private static string ConnectionString { get { return "Data Source=.\\SQLEXPRESS;Database=TestDapper;Trusted_Connection=True;"; } }
         private readonly DatabaseEntities _context;
 
         public EDMXComparison()
