@@ -49,13 +49,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Exceptions\InvalidCacheItemException.cs" />
-    <Compile Include="Helpers\ClassMapper.cs" />
+    <Compile Include="Mapper\IClassMapper.cs" />
+    <Compile Include="Mapper\MapContainer.cs" />
     <Compile Include="Helpers\Constants.cs" />
     <Compile Include="Helpers\ExpressionHelper.cs" />
     <Compile Include="Extensions\DapperExtensions.cs" />
     <Compile Include="Helpers\ExpressionManager.cs" />
     <Compile Include="Helpers\SqlWriter.cs" />
-    <Compile Include="Helpers\TableHelper.cs" />
+    <Compile Include="Mapper\ClassMapper.cs" />
     <Compile Include="Helpers\TypeHelper.cs" />
     <Compile Include="QueryProvider.cs" />
     <Compile Include="Exceptions\InvalidQueryException.cs" />

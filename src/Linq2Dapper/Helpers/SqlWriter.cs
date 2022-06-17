@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dapper.Contrib.Linq2Dapper.Mapper;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
         private readonly StringBuilder _joinTable;
         private readonly StringBuilder _whereClause;
         private readonly StringBuilder _orderBy;
-        private readonly ExpressionManager _expressionManager;
+        private readonly MapContainer _mapContainer;
         private int _nextParameter;
 
         private string _parameter
@@ -38,7 +39,7 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
             }
         }
 
-        internal SqlWriter(ExpressionManager expressionManager)
+        internal SqlWriter(MapContainer mapContainer)
         {
             Parameters = new DynamicParameters();
             _joinTable = new StringBuilder();
@@ -46,14 +47,14 @@ namespace Dapper.Contrib.Linq2Dapper.Helpers
             _orderBy = new StringBuilder();
             SelectType = typeof(TData);
 
-            _expressionManager = expressionManager;
-            _expressionManager.GetTypeProperties(typeof(TData));
+            _mapContainer = mapContainer;
+            _mapContainer.AddType(typeof(TData));
         }
 
         private void SelectStatement()
         {
-            var primaryTable = _expressionManager.TryGetTable<TData>();
-            var selectTable = (SelectType != typeof(TData)) ? _expressionManager.TryGetTable(SelectType) : primaryTable;
+            var primaryTable = _mapContainer.TryGetTable<TData>();
+            var selectTable = (SelectType != typeof(TData)) ? _mapContainer.TryGetTable(SelectType) : primaryTable;
 
             _selectStatement = new StringBuilder();
 

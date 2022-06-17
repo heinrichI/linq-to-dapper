@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Dapper.Contrib.Linq2Dapper.Exceptions;
 using Dapper.Contrib.Linq2Dapper.Helpers;
+using Dapper.Contrib.Linq2Dapper.Mapper;
 
 namespace Dapper.Contrib.Linq2Dapper
 {
@@ -12,8 +13,7 @@ namespace Dapper.Contrib.Linq2Dapper
         #region Fields
         //--------------------------------------------------------------------------------------------------------------------------------------------------
         private SqlWriter<TData> _writer;
-        private readonly ClassMapper _classMapper;
-        private readonly ExpressionManager _expressionManager;
+        private readonly MapContainer _mapContainer;
 
         #endregion
         //--------------------------------------------------------------------------------------------------------------------------------------------------
@@ -28,10 +28,9 @@ namespace Dapper.Contrib.Linq2Dapper
 
         #region ctor
         //--------------------------------------------------------------------------------------------------------------------------------------------------
-        public QueryBuilder(ClassMapper classMapper, ExpressionManager expressionManager)
+        public QueryBuilder(MapContainer mapContainer)
         {
-            _classMapper = classMapper;
-            _expressionManager = expressionManager;
+            _mapContainer = mapContainer;
         }
 
         #endregion
@@ -41,7 +40,7 @@ namespace Dapper.Contrib.Linq2Dapper
         //--------------------------------------------------------------------------------------------------------------------------------------------------
         public void Evaluate(Expression node)
         {
-            _writer = new SqlWriter<TData>(_expressionManager);
+            _writer = new SqlWriter<TData>(_mapContainer);
             base.Visit(node);
         }
 
@@ -81,9 +80,9 @@ namespace Dapper.Contrib.Linq2Dapper
         /// <param name="node">The expression to visit.</param>
         protected override Expression VisitMember(MemberExpression node)
         {
-            if (ExpressionHelper.IsSpecificMemberExpression(node, node.Expression.Type, _classMapper.TryGetPropertyList(node.Expression.Type)))
+            if (ExpressionHelper.IsSpecificMemberExpression(node, node.Expression.Type, _mapContainer.TryGetPropertyList(node.Expression.Type)))
             {
-                _writer.ColumnName(_expressionManager.GetPropertyNameWithIdentifierFromExpression(node));
+                _writer.ColumnName(GetPropertyNameWithIdentifierFromExpression(node));
                 return node;
             }
             else if (ExpressionHelper.IsVariable(node))
@@ -197,11 +196,11 @@ namespace Dapper.Contrib.Linq2Dapper
                 case MethodCall.OrderByDescending:
                 case MethodCall.ThenByDescending:
                     // ORDER BY ...
-                    _writer.WriteOrder(_expressionManager.GetPropertyNameWithIdentifierFromExpression(node.Arguments[1]), node.Method.Name.Contains("Descending"));
+                    _writer.WriteOrder(GetPropertyNameWithIdentifierFromExpression(node.Arguments[1]), node.Method.Name.Contains("Descending"));
                     return Visit(node.Arguments[0]);
                 case MethodCall.Select:
                     var type = ((LambdaExpression)((UnaryExpression)node.Arguments[1]).Operand).Body.Type;
-                    _expressionManager.GetTypeProperties(type);
+                    _mapContainer.AddType(type);
                     _writer.SelectType = type;
                     return base.VisitMethodCall(node);
             }
@@ -243,11 +242,11 @@ namespace Dapper.Contrib.Linq2Dapper
             if (joinFromType.IsGenericType) joinFromType = joinFromType.GenericTypeArguments[1];
             var joinToType = ((LambdaExpression)((UnaryExpression)expression.Arguments[4]).Operand).Parameters[1].Type;
 
-            _expressionManager.GetTypeProperties(joinFromType);
-            var joinToTable = _expressionManager.GetTypeProperties(joinToType);
+            _mapContainer.AddType(joinFromType);
+            var joinToTable = _mapContainer.AddType(joinToType);
 
-            var primaryJoinColumn = _expressionManager.GetPropertyNameWithIdentifierFromExpression(expression.Arguments[2]);
-            var secondaryJoinColumn = _expressionManager.GetPropertyNameWithIdentifierFromExpression(expression.Arguments[3]);
+            var primaryJoinColumn = GetPropertyNameWithIdentifierFromExpression(expression.Arguments[2]);
+            var secondaryJoinColumn = GetPropertyNameWithIdentifierFromExpression(expression.Arguments[3]);
 
             _writer.WriteJoin(joinToTable.Name, joinToTable.Identifier, primaryJoinColumn, secondaryJoinColumn);
 
@@ -258,7 +257,7 @@ namespace Dapper.Contrib.Linq2Dapper
         private bool IsNullMethod(MethodCallExpression node)
         {
             if (!ExpressionHelper.IsSpecificMemberExpression(node.Arguments[0], typeof (TData),
-                    _classMapper.TryGetPropertyList<TData>())) return false;
+                    _mapContainer.TryGetPropertyList<TData>())) return false;
 
             _writer.IsNullFunction();
             _writer.OpenBrace();
@@ -279,7 +278,7 @@ namespace Dapper.Contrib.Linq2Dapper
             if (node.Method.DeclaringType == typeof(string))
             {
                 // LIKE '..'
-                if (!ExpressionHelper.IsSpecificMemberExpression(node.Object, typeof(TData), _classMapper.TryGetPropertyList<TData>()))
+                if (!ExpressionHelper.IsSpecificMemberExpression(node.Object, typeof(TData), _mapContainer.TryGetPropertyList<TData>()))
                     return node;
 
                 Visit(node.Object);
@@ -297,7 +296,7 @@ namespace Dapper.Contrib.Linq2Dapper
             {
                 if (
                     !ExpressionHelper.IsSpecificMemberExpression(node.Arguments[0], typeof (TData),
-                        _classMapper.TryGetPropertyList<TData>()))
+                        _mapContainer.TryGetPropertyList<TData>()))
                     return node;
 
 
@@ -309,7 +308,7 @@ namespace Dapper.Contrib.Linq2Dapper
             {
                 if (
                     !ExpressionHelper.IsSpecificMemberExpression(node.Arguments[1], typeof (TData),
-                        _classMapper.TryGetPropertyList<TData>()))
+                        _mapContainer.TryGetPropertyList<TData>()))
                     return node;
 
                 Visit(node.Arguments[1]);
@@ -341,5 +340,16 @@ namespace Dapper.Contrib.Linq2Dapper
 
         #endregion
         //--------------------------------------------------------------------------------------------------------------------------------------------------
+
+        internal string GetPropertyNameWithIdentifierFromExpression(Expression expression)
+        {
+            var exp = ExpressionHelper.GetMemberExpression(expression);
+            if (!(exp is MemberExpression)) return string.Empty;
+
+            var table = _mapContainer.TryGetTable(((MemberExpression)exp).Expression.Type);
+            var member = ((MemberExpression)exp).Member;
+
+            return string.Format("{0}.[{1}]", table.Identifier, table.Columns[member.Name]);
+        }
     }
 }

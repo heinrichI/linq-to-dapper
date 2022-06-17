@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using Dapper.Contrib.Linq2Dapper.Exceptions;
 using Dapper.Contrib.Linq2Dapper.Helpers;
 using System.Collections;
+using Dapper.Contrib.Linq2Dapper.Mapper;
 
 namespace Dapper.Contrib.Linq2Dapper
 {
@@ -17,11 +18,10 @@ namespace Dapper.Contrib.Linq2Dapper
 
         public QueryProvider(IDbConnection connection)
         {
-            ClassMapper _classMapper = new ClassMapper();
-            ExpressionManager expressionManager = new ExpressionManager(_classMapper);
+            MapContainer _mapContainer = new MapContainer();
 
             _connection = connection;
-            _qb = new QueryBuilder<TData>(_classMapper, expressionManager);
+            _qb = new QueryBuilder<TData>(_mapContainer);
         }
 
         public IQueryable CreateQuery(Expression expression)
